@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  alb-simulator:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx-dns-intermittent.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - apache-dns-intermittent
+    restart: unless-stopped
+
+  apache-dns-intermittent:
+    image: httpd:2.4
+    ports:
+      - "8080:80"
+    volumes:
+      - ./apache-dns-intermittent.conf:/usr/local/apache2/conf/httpd.conf
+    depends_on:
+      - backend-app
+    restart: unless-stopped
+
+  backend-app:
+    image: python:3.9-slim
+    volumes:
+      - ../../common/backend-app.py:/app/app.py
+    working_dir: /app
+    command: sh -c "pip install flask && python app.py"
+    ports:
+      - "5000:5000"
+    environment:
+      - SERVER_NAME=dns-intermittent-backend
+    restart: unless-stopped
+
+  # 불안정한 백엔드 (주기적 재시작)
+  unstable-backend:
+    image: python:3.9-slim
+    volumes:
+      - ./unstable-backend.py:/app/app.py
+    working_dir: /app
+    command: sh -c "pip install flask && python app.py"
+    environment:
+      - SERVER_NAME=unstable-backend
+    restart: always

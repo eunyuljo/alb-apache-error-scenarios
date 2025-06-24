@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  alb-simulator:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx-dns-delay.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - apache-dns-delay
+    restart: unless-stopped
+
+  apache-dns-delay:
+    image: httpd:2.4
+    ports:
+      - "8080:80"
+    volumes:
+      - ./apache-dns-slow.conf:/usr/local/apache2/conf/httpd.conf
+    depends_on:
+      - backend-app
+    restart: unless-stopped
+
+  backend-app:
+    image: python:3.9-slim
+    volumes:
+      - ../../common/backend-app.py:/app/app.py
+    working_dir: /app
+    command: sh -c "pip install flask && python app.py"
+    ports:
+      - "5000:5000"
+    environment:
+      - SERVER_NAME=dns-delay-backend
+    restart: unless-stopped
+
+  # 늦게 시작하는 백엔드 (DNS 지연 시뮬레이션)
+  slow-dns-backend:
+    image: python:3.9-slim
+    volumes:
+      - ../../common/backend-app.py:/app/app.py
+    working_dir: /app
+    command: sh -c "sleep 20 && pip install flask && python app.py"
+    environment:
+      - SERVER_NAME=slow-dns-backend
+    restart: unless-stopped
