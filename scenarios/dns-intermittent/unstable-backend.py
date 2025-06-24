@@ -8,7 +8,7 @@ import threading
 app = Flask(__name__)
 
 # 30-120초 후 랜덤 종료
-shutdown_after = random.randint(30, 120)
+shutdown_after = random.randint(15, 45)
 
 @app.route('/health')
 def health():
@@ -17,8 +17,8 @@ def health():
 @app.route('/intermittent')
 def intermittent():
     # 30% 확률로 지연 발생
-    if random.random() < 0.3:
-        delay = random.randint(5, 15)
+    if random.random() < 0.5:
+        delay = random.randint(10, 25)
         print(f"Intermittent delay: {delay}s")
         time.sleep(delay)
     return "Intermittent response from unstable backend"
